@@ -15,7 +15,7 @@ const Navbar = () => {
   return (
     <nav className={`navbar navbar-expand-lg navbar-dark fixed-top ${scrolled ? 'bg-dark bg-opacity-90' : 'bg-transparent'}`}>
       <div className="container">
-        <Link className="navbar-brand fw-bold" to="/">StoreBrand Pro</Link>
+        <Link className="navbar-brand fw-bold" to="/">NEU</Link>
         <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
           <span className="navbar-toggler-icon"></span>
         </button>

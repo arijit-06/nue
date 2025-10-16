@@ -124,7 +124,7 @@ const Estimator = () => {
     <div className="container mt-4">
       <div className="row">
         <div className="col-12">
-          <h2 className="mb-4">Store Branding Estimator</h2>
+          <h2 className="mb-4">NEU Store Branding Estimator</h2>
           
           <Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={handleSubmit}>
             {({ values, isValid }) => {

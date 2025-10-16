@@ -9,7 +9,7 @@
 function generateEstimateId() {
   const year = new Date().getFullYear();
   const sequence = Math.floor(Math.random() * 9999) + 1;
-  return `EST-${year}-${sequence.toString().padStart(4, '0')}`;
+  return `NEU-${year}-${sequence.toString().padStart(4, '0')}`;
 }
 
 /**
@@ -216,7 +216,7 @@ export function formatForExcel(calculationData, clientData) {
   ];
 
   return {
-    fileName: `estimate_${clientData.storeName.replace(/\s+/g, '_')}_${timestamp}.xlsx`,
+    fileName: `neu_estimate_${clientData.storeName.replace(/\s+/g, '_')}_${timestamp}.xlsx`,
     sheets: [
       {
         name: 'Estimate Summary',
