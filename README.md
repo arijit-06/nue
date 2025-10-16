@@ -1,5 +1,7 @@
 # NEU - Store Branding Portal
 
+🌐 **Live Demo**: [https://nue-two.vercel.app/](https://nue-two.vercel.app/)
+
 A comprehensive React-based web application for store branding solutions, featuring both estimation tools and e-commerce functionality.
 
 ## 🚀 Features
@@ -154,6 +156,9 @@ src/
 - Secure file upload handling
 
 ## 🚀 Deployment
+
+### 🌐 Live Application
+**Production URL**: [https://nue-two.vercel.app/](https://nue-two.vercel.app/)
 
 ### Build for Production
 ```bash
