@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
-import { Formik, Form, Field, ErrorMessage } from 'formik';
+import { Formik, Form } from 'formik';
 import * as Yup from 'yup';
 import { toast } from 'react-toastify';
 import { calculateStoreFixtures } from '../utils/storeCalculator';
 import { calculateEstimate } from '../utils/pricingCalculator';
 import { formatForExcel } from '../utils/estimateFormatter';
+import ClientDetailsForm from '../components/estimator/ClientDetailsForm';
+import StoreSpecsForm from '../components/estimator/StoreSpecsForm';
+import BrandingOptionsForm from '../components/estimator/BrandingOptionsForm';
+import ResultsDisplay from '../components/estimator/ResultsDisplay';
 
 const Estimator = () => {
   const [results, setResults] = useState(null);

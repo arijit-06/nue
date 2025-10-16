@@ -54,4 +54,20 @@ const Portfolio = () => {
                       <h5>{project.client} | {project.type} | {project.city}</h5>
                     </div>
                   </div>
-                ))}\n              </div>\n              <button className=\"carousel-control-prev\" type=\"button\" data-bs-target=\"#portfolioCarousel\" data-bs-slide=\"prev\">\n                <span className=\"carousel-control-prev-icon\"></span>\n              </button>\n              <button className=\"carousel-control-next\" type=\"button\" data-bs-target=\"#portfolioCarousel\" data-bs-slide=\"next\">\n                <span className=\"carousel-control-next-icon\"></span>\n              </button>\n            </div>\n          </div>\n        </div>\n      </div>\n    </section>\n  );\n};\n\nexport default Portfolio;"
+                ))}
+              </div>
+              <button className="carousel-control-prev" type="button" data-bs-target="#portfolioCarousel" data-bs-slide="prev">
+                <span className="carousel-control-prev-icon"></span>
+              </button>
+              <button className="carousel-control-next" type="button" data-bs-target="#portfolioCarousel" data-bs-slide="next">
+                <span className="carousel-control-next-icon"></span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+export default Portfolio;
