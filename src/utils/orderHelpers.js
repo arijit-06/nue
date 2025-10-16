@@ -3,6 +3,9 @@
  * Utility functions for order management and processing
  */
 
+import { db } from '../config/firebase';
+import { collection, addDoc, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+
 export const generateOrderId = () => {
   const timestamp = Date.now();
   const random = Math.floor(Math.random() * 1000);
@@ -61,4 +64,62 @@ export const createOrderSummary = (cartItems, customerInfo) => {
     status: 'Order Placed',
     estimatedDelivery: calculateDeliveryDate(new Date())
   };
+};
+
+export const createFirebaseOrderData = (orderId, userId, customerDetails, items, billing, paymentMethod = 'pending') => {
+  return {
+    orderId,
+    userId,
+    customerDetails: {
+      name: `${customerDetails.firstName} ${customerDetails.lastName}`,
+      email: customerDetails.email,
+      phone: customerDetails.phone || '',
+      address: customerDetails.address,
+      city: customerDetails.city,
+      pincode: customerDetails.pincode
+    },
+    items: items.map(item => ({
+      productId: item.productId,
+      productName: item.productName,
+      dimensions: item.dimensions,
+      area: item.area,
+      pricePerSqft: item.pricePerSqft,
+      quantity: item.quantity,
+      itemTotal: item.itemTotal,
+      artworkFileName: item.artworkFileName,
+      artworkFilePath: item.artworkFile ? `/jobs/${orderId}/${item.artworkFileName}` : null
+    })),
+    billing,
+    payment: {
+      method: paymentMethod,
+      status: 'pending'
+    },
+    orderStatus: 'pending',
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp()
+  };
+};
+
+export const saveOrderToFirestore = async (orderData) => {
+  try {
+    await addDoc(collection(db, 'orders'), orderData);
+    await addDoc(collection(db, 'users', orderData.userId, 'orders'), orderData);
+    return orderData.orderId;
+  } catch (error) {
+    console.error('Error saving order to Firestore:', error);
+    throw error;
+  }
+};
+
+export const updateOrderStatus = async (orderId, newStatus) => {
+  try {
+    const orderRef = doc(db, 'orders', orderId);
+    await updateDoc(orderRef, {
+      orderStatus: newStatus,
+      updatedAt: serverTimestamp()
+    });
+  } catch (error) {
+    console.error('Error updating order status:', error);
+    throw error;
+  }
 };

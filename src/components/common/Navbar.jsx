@@ -1,11 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const { getCartItemCount } = useCart();
   const location = useLocation();
+  const navigate = useNavigate();
+
+  // Mock auth state - replace with actual auth context
+  const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
+  const userRole = localStorage.getItem('userRole');
+  const userName = localStorage.getItem('userName') || 'User';
 
   useEffect(() => {
     const handleScroll = () => {
@@ -16,6 +22,13 @@ const Navbar = () => {
   }, []);
 
   const isActive = (path) => location.pathname === path;
+
+  const handleLogout = () => {
+    localStorage.removeItem('isAuthenticated');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('userName');
+    navigate('/');
+  };
 
   return (
     <nav className={`navbar navbar-expand-lg navbar-dark fixed-top ${scrolled ? 'bg-dark bg-opacity-90' : 'bg-transparent'}`}>
@@ -45,7 +58,8 @@ const Navbar = () => {
             </li>
           </ul>
           
-          <div className="d-flex">
+          <div className="d-flex align-items-center gap-2">
+            {/* Cart Icon */}
             <Link className="btn btn-outline-light position-relative" to="/cart">
               🛒
               {getCartItemCount() > 0 ? (
@@ -58,6 +72,35 @@ const Navbar = () => {
                 </span>
               )}
             </Link>
+
+            {/* Auth Section */}
+            {!isAuthenticated ? (
+              <Link className="btn btn-primary" to="/login">
+                Login
+              </Link>
+            ) : (
+              <div className="dropdown">
+                <button 
+                  className="btn btn-outline-light dropdown-toggle" 
+                  type="button" 
+                  data-bs-toggle="dropdown"
+                >
+                  {userName}
+                </button>
+                <ul className="dropdown-menu dropdown-menu-end">
+                  <li><Link className="dropdown-item" to="/orders">My Orders</Link></li>
+                  <li><Link className="dropdown-item" to="/profile">Profile</Link></li>
+                  {userRole === 'admin' && (
+                    <>
+                      <li><hr className="dropdown-divider" /></li>
+                      <li><Link className="dropdown-item" to="/admin/dashboard">Admin Panel</Link></li>
+                    </>
+                  )}
+                  <li><hr className="dropdown-divider" /></li>
+                  <li><button className="dropdown-item" onClick={handleLogout}>Logout</button></li>
+                </ul>
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { toast } from 'react-toastify';
+import { generateOrderId, createFirebaseOrderData, saveOrderToFirestore } from '../utils/orderHelpers';
 
 const CartContext = createContext();
 
@@ -126,13 +127,48 @@ export const CartProvider = ({ children }) => {
 
   const getCartItemCount = () => cartState.itemCount;
 
+  const placeOrder = async (customerDetails, paymentMethod = 'pending', currentUser) => {
+    try {
+      if (!currentUser) {
+        throw new Error('User must be logged in to place order');
+      }
+
+      const orderId = generateOrderId();
+      const billing = {
+        subtotal: cartState.subtotal,
+        gst: cartState.gst,
+        total: cartState.total
+      };
+      
+      const orderData = createFirebaseOrderData(
+        orderId,
+        currentUser.uid,
+        customerDetails,
+        cartState.items,
+        billing,
+        paymentMethod
+      );
+
+      await saveOrderToFirestore(orderData);
+      clearCart();
+      
+      toast.success('Order placed successfully!');
+      return orderId;
+    } catch (error) {
+      console.error('Error placing order:', error);
+      toast.error('Failed to place order. Please try again.');
+      throw error;
+    }
+  };
+
   const value = {
     ...cartState,
     addToCart,
     removeFromCart,
     updateQuantity,
     clearCart,
-    getCartItemCount
+    getCartItemCount,
+    placeOrder
   };
 
   return (

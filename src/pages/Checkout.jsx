@@ -2,10 +2,16 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
+import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
+import { toast } from 'react-toastify';
 
 const Checkout = () => {
   const navigate = useNavigate();
+  const { cartState, placeOrder } = useCart();
+  const { currentUser } = useAuth();
   const [paymentMethod, setPaymentMethod] = useState('card');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const validationSchema = Yup.object({
     email: Yup.string().email('Invalid email').required('Email is required'),
@@ -13,12 +19,32 @@ const Checkout = () => {
     lastName: Yup.string().required('Last name is required'),
     address: Yup.string().required('Address is required'),
     city: Yup.string().required('City is required'),
-    pincode: Yup.string().required('Pincode is required')
+    pincode: Yup.string().matches(/^[0-9]{6}$/, 'Pincode must be 6 digits').required('Pincode is required'),
+    phone: Yup.string().matches(/^[0-9]{10}$/, 'Phone must be 10 digits').required('Phone is required')
   });
 
-  const handleSubmit = (values) => {
-    // Process order
-    navigate('/order-success');
+  const handleSubmit = async (values) => {
+    if (!currentUser) {
+      toast.error('Please login to place order');
+      navigate('/login');
+      return;
+    }
+
+    if (cartState.items.length === 0) {
+      toast.error('Your cart is empty');
+      navigate('/cart');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const orderId = await placeOrder(values, paymentMethod, currentUser);
+      navigate(`/order-success?orderId=${orderId}`);
+    } catch (error) {
+      console.error('Order placement failed:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -28,9 +54,10 @@ const Checkout = () => {
         <div className="col-md-8">
           <Formik
             initialValues={{
-              email: '',
+              email: currentUser?.email || '',
               firstName: '',
               lastName: '',
+              phone: '',
               address: '',
               city: '',
               pincode: ''
@@ -48,6 +75,10 @@ const Checkout = () => {
                     <div className="col-12">
                       <Field name="email" type="email" className="form-control" placeholder="Email" />
                       <ErrorMessage name="email" component="div" className="text-danger small" />
+                    </div>
+                    <div className="col-12">
+                      <Field name="phone" type="tel" className="form-control" placeholder="Phone Number" />
+                      <ErrorMessage name="phone" component="div" className="text-danger small" />
                     </div>
                     <div className="col-md-6">
                       <Field name="firstName" type="text" className="form-control" placeholder="First Name" />
@@ -73,8 +104,8 @@ const Checkout = () => {
                 </div>
               </div>
               
-              <button type="submit" className="btn btn-success btn-lg w-100">
-                Place Order
+              <button type="submit" className="btn btn-success btn-lg w-100" disabled={isSubmitting}>
+                {isSubmitting ? 'Placing Order...' : 'Place Order'}
               </button>
             </Form>
           </Formik>
@@ -85,7 +116,36 @@ const Checkout = () => {
               <h5>Order Summary</h5>
             </div>
             <div className="card-body">
-              <p>Order summary will be displayed here</p>
+              {cartState.items.length > 0 ? (
+                <>
+                  {cartState.items.map((item, index) => (
+                    <div key={item.id} className="d-flex justify-content-between mb-2">
+                      <div>
+                        <small className="text-muted">{item.productName}</small>
+                        <br />
+                        <small>{item.dimensions.length}×{item.dimensions.width} ft</small>
+                      </div>
+                      <span>₹{item.itemTotal}</span>
+                    </div>
+                  ))}
+                  <hr />
+                  <div className="d-flex justify-content-between">
+                    <span>Subtotal:</span>
+                    <span>₹{cartState.subtotal}</span>
+                  </div>
+                  <div className="d-flex justify-content-between">
+                    <span>GST (18%):</span>
+                    <span>₹{cartState.gst}</span>
+                  </div>
+                  <hr />
+                  <div className="d-flex justify-content-between fw-bold">
+                    <span>Total:</span>
+                    <span>₹{cartState.total}</span>
+                  </div>
+                </>
+              ) : (
+                <p className="text-muted">Your cart is empty</p>
+              )}
             </div>
           </div>
         </div>
