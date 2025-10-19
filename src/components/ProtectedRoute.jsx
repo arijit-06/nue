@@ -1,25 +1,24 @@
 import React from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const ProtectedRoute = ({ children }) => {
-  const location = useLocation();
-  
-  // TODO: Replace with actual auth check
-  // const { user, loading } = useAuth();
-  
-  // Mock authentication check
-  const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
-  
-  // if (loading) {
-  //   return <div className="d-flex justify-content-center mt-5">
-  //     <div className="spinner-border" role="status"></div>
-  //   </div>;
-  // }
-  
-  if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+  const { currentUser, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '60vh' }}>
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+      </div>
+    );
   }
-  
+
+  if (!currentUser) {
+    return <Navigate to="/login" />;
+  }
+
   return children;
 };
 

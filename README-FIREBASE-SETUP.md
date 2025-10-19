@@ -57,25 +57,38 @@ In Firestore → Rules, replace with:
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Orders collection - only authenticated users can read/write their own orders
-    match /orders/{orderId} {
-      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
-    }
-    
-    // User orders subcollection
-    match /users/{userId}/orders/{orderId} {
+    // Users can read their own data
+    match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
     
-    // Admin access to all orders (add admin check later)
+    // Users can read their own orders
     match /orders/{orderId} {
-      allow read, write: if request.auth != null;
+      allow read: if request.auth != null && 
+                     resource.data.userId == request.auth.uid;
+      allow write: if request.auth != null;
+    }
+    
+    // Admins collection (only admins can read)
+    match /admins/{adminId} {
+      allow read: if request.auth != null;
+    }
+    
+    // Products are public
+    match /products/{productId} {
+      allow read: if true;
     }
   }
 }
 ```
 
-## Step 8: Setup Storage Rules (for artwork files)
+## Step 8: Add Admin Emails
+1. In Firestore, create "admins" collection
+2. Add documents with admin emails:
+   - Document ID: auto-generated
+   - Fields: { email: "admin@example.com", role: "admin" }
+
+## Step 9: Setup Storage Rules (for artwork files)
 In Storage → Rules:
 
 ```javascript
@@ -89,10 +102,16 @@ service firebase.storage {
 }
 ```
 
-## Step 9: Test Connection
+## Step 10: Test Connection
 1. Start development server: `npm run dev`
 2. Check browser console for Firebase connection
 3. Try creating a test user account
+
+## IMPORTANT: Never Commit Secrets
+- `.env` file is in `.gitignore`
+- Only commit `.env.example` with placeholder values
+- Share actual values securely with team members
+- Never expose Firebase config in public repositories
 
 ## Collections Structure
 

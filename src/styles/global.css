@@ -10,16 +10,39 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  padding-top: 76px;
 }
 
 * {
   box-sizing: border-box;
 }
 
+/* Make app use full height */
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Main content grows to push footer down */
+main {
+  flex: 1;
+  min-height: calc(100vh - 150px);
+}
+
+/* Thin footer */
+footer {
+  margin-top: auto;
+  padding: 1rem 0 !important;
+  font-size: 0.9rem;
+}
+
+.navbar {
+  min-height: 70px;
+}
+
 .hero-section {
-  margin-top: -76px;
-  padding-top: 76px;
+  margin-top: -80px;
+  padding-top: 80px;
 }
 
 .card {

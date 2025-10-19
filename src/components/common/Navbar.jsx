@@ -1,103 +1,197 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
+import { useAuth } from '../../context/AuthContext';
 
 const Navbar = () => {
-  const [scrolled, setScrolled] = useState(false);
-  const { getCartItemCount } = useCart();
+  const { itemCount } = useCart();
+  const { currentUser, logout, isAdmin } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Mock auth state - replace with actual auth context
-  const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
-  const userRole = localStorage.getItem('userRole');
-  const userName = localStorage.getItem('userName') || 'User';
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 50);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
+  // Check if current path is active
   const isActive = (path) => location.pathname === path;
 
-  const handleLogout = () => {
-    localStorage.removeItem('isAuthenticated');
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('userName');
-    navigate('/');
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
+
+  // Smooth scroll to sections (only on home page)
+  const scrollToSection = (sectionId) => {
+    if (location.pathname !== '/') {
+      navigate('/');
+      setTimeout(() => {
+        document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    } else {
+      document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  // Get display name (email username or full email)
+  const getDisplayName = () => {
+    if (!currentUser) return 'User';
+    return currentUser.displayName || currentUser.email?.split('@')[0] || 'User';
   };
 
   return (
-    <nav className={`navbar navbar-expand-lg navbar-dark fixed-top ${scrolled ? 'bg-dark bg-opacity-90' : 'bg-transparent'}`}>
+    <nav className="navbar navbar-expand-lg navbar-dark bg-dark fixed-top shadow">
       <div className="container">
-        <Link className="navbar-brand fw-bold" to="/">NEU</Link>
+        {/* Brand Logo */}
+        <Link className="navbar-brand fw-bold fs-4" to="/">
+          NEU
+        </Link>
         
-        <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        {/* Mobile Toggle Button */}
+        <button 
+          className="navbar-toggler" 
+          type="button" 
+          data-bs-toggle="collapse" 
+          data-bs-target="#navbarNav"
+          aria-controls="navbarNav"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
           <span className="navbar-toggler-icon"></span>
         </button>
         
+        {/* Navbar Content */}
         <div className="collapse navbar-collapse" id="navbarNav">
+          {/* Center Navigation Links */}
           <ul className="navbar-nav mx-auto">
             <li className="nav-item">
-              <Link className={`nav-link ${isActive('/') ? 'active' : ''}`} to="/">Home</Link>
+              <Link 
+                className={`nav-link ${isActive('/') ? 'active fw-bold' : ''}`} 
+                to="/"
+              >
+                Home
+              </Link>
             </li>
             <li className="nav-item">
-              <Link className={`nav-link ${isActive('/estimate') ? 'active' : ''}`} to="/estimate">Get Estimate</Link>
+              <Link 
+                className={`nav-link ${isActive('/estimate') ? 'active fw-bold' : ''}`} 
+                to="/estimate"
+              >
+                Get Estimate
+              </Link>
             </li>
             <li className="nav-item">
-              <Link className={`nav-link ${isActive('/shop') ? 'active' : ''}`} to="/shop">Shop</Link>
+              <Link 
+                className={`nav-link ${isActive('/shop') ? 'active fw-bold' : ''}`} 
+                to="/shop"
+              >
+                Shop
+              </Link>
             </li>
             <li className="nav-item">
-              <a className="nav-link" href="#portfolio" onClick={() => location.pathname === '/' && document.getElementById('portfolio')?.scrollIntoView({behavior: 'smooth'})}>Portfolio</a>
+              <button 
+                className="nav-link btn btn-link text-decoration-none"
+                onClick={() => scrollToSection('portfolio')}
+              >
+                Portfolio
+              </button>
             </li>
             <li className="nav-item">
-              <a className="nav-link" href="#contact" onClick={() => location.pathname === '/' && document.getElementById('contact')?.scrollIntoView({behavior: 'smooth'})}>Contact</a>
+              <button 
+                className="nav-link btn btn-link text-decoration-none"
+                onClick={() => scrollToSection('contact')}
+              >
+                Contact
+              </button>
             </li>
           </ul>
           
-          <div className="d-flex align-items-center gap-2">
-            {/* Cart Icon */}
-            <Link className="btn btn-outline-light position-relative" to="/cart">
-              🛒
-              {getCartItemCount() > 0 ? (
-                <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                  {getCartItemCount()}
-                </span>
-              ) : (
-                <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary" style={{opacity: 0.5}}>
-                  0
+          {/* Right Side: Cart & Auth */}
+          <div className="d-flex align-items-center gap-3">
+            {/* Cart Icon with Badge */}
+            <Link 
+              className="btn btn-outline-light position-relative" 
+              to="/cart"
+              style={{ minWidth: '50px' }}
+            >
+              <i className="bi bi-cart3"></i>
+              {itemCount > 0 && (
+                <span 
+                  className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                  style={{ fontSize: '0.7rem' }}
+                >
+                  {itemCount}
+                  <span className="visually-hidden">items in cart</span>
                 </span>
               )}
             </Link>
 
-            {/* Auth Section */}
-            {!isAuthenticated ? (
+            {/* Authentication Section */}
+            {!currentUser ? (
+              // Not logged in - Show Login button
               <Link className="btn btn-primary" to="/login">
                 Login
               </Link>
             ) : (
+              // Logged in - Show User Dropdown
               <div className="dropdown">
                 <button 
-                  className="btn btn-outline-light dropdown-toggle" 
+                  className="btn btn-outline-light dropdown-toggle d-flex align-items-center gap-2" 
                   type="button" 
+                  id="userDropdown"
                   data-bs-toggle="dropdown"
+                  aria-expanded="false"
                 >
-                  {userName}
+                  <i className="bi bi-person-circle"></i>
+                  <span className="d-none d-md-inline">{getDisplayName()}</span>
                 </button>
-                <ul className="dropdown-menu dropdown-menu-end">
-                  <li><Link className="dropdown-item" to="/orders">My Orders</Link></li>
-                  <li><Link className="dropdown-item" to="/profile">Profile</Link></li>
-                  {userRole === 'admin' && (
+                <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                  <li className="px-3 py-2 border-bottom">
+                    <small className="text-muted d-block">Signed in as</small>
+                    <strong className="d-block text-truncate" style={{ maxWidth: '200px' }}>
+                      {currentUser.email}
+                    </strong>
+                  </li>
+                  
+                  <li>
+                    <Link className="dropdown-item" to="/dashboard">
+                      <i className="bi bi-bag-check me-2"></i>
+                      My Orders
+                    </Link>
+                  </li>
+                  
+                  <li>
+                    <Link className="dropdown-item" to="/profile">
+                      <i className="bi bi-person me-2"></i>
+                      Profile
+                    </Link>
+                  </li>
+                  
+                  {/* Admin Panel Link - Only show if user is admin */}
+                  {isAdmin && (
                     <>
                       <li><hr className="dropdown-divider" /></li>
-                      <li><Link className="dropdown-item" to="/admin/dashboard">Admin Panel</Link></li>
+                      <li>
+                        <Link className="dropdown-item text-primary fw-bold" to="/admin/dashboard">
+                          <i className="bi bi-shield-lock me-2"></i>
+                          Admin Panel
+                        </Link>
+                      </li>
                     </>
                   )}
+                  
                   <li><hr className="dropdown-divider" /></li>
-                  <li><button className="dropdown-item" onClick={handleLogout}>Logout</button></li>
+                  
+                  <li>
+                    <button 
+                      className="dropdown-item text-danger" 
+                      onClick={handleLogout}
+                    >
+                      <i className="bi bi-box-arrow-right me-2"></i>
+                      Logout
+                    </button>
+                  </li>
                 </ul>
               </div>
             )}

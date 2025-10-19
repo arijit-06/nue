@@ -1,28 +1,28 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const AdminRoute = ({ children }) => {
-  // TODO: Replace with actual auth check
-  // const { user, loading } = useAuth();
-  
-  // Mock admin check
-  const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
-  const isAdmin = localStorage.getItem('userRole') === 'admin';
-  
-  // if (loading) {
-  //   return <div className="d-flex justify-content-center mt-5">
-  //     <div className="spinner-border" role="status"></div>
-  //   </div>;
-  // }
-  
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+  const { currentUser, isAdmin, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '60vh' }}>
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+      </div>
+    );
   }
-  
+
+  if (!currentUser) {
+    return <Navigate to="/login" />;
+  }
+
   if (!isAdmin) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/" />;
   }
-  
+
   return children;
 };
 

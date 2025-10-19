@@ -1,151 +1,149 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { Container, Card, Form, Button, Alert } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
-import { Formik, Form, Field, ErrorMessage } from 'formik';
+import { useAuth } from '../context/AuthContext';
+import { Formik } from 'formik';
 import * as Yup from 'yup';
-import { toast } from 'react-toastify';
 
 const Signup = () => {
+  const { signup } = useAuth();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
 
   const validationSchema = Yup.object({
-    fullName: Yup.string().required('Full name is required'),
-    email: Yup.string().email('Invalid email format').required('Email is required'),
+    name: Yup.string().required('Name is required'),
+    email: Yup.string().email('Invalid email').required('Email is required'),
     phone: Yup.string().matches(/^[0-9]{10}$/, 'Phone must be 10 digits').required('Phone is required'),
     password: Yup.string().min(6, 'Password must be at least 6 characters').required('Password is required'),
     confirmPassword: Yup.string()
-      .oneOf([Yup.ref('password')], 'Passwords must match')
+      .oneOf([Yup.ref('password'), null], 'Passwords must match')
       .required('Confirm password is required')
   });
 
-  const handleSubmit = async (values) => {
-    setLoading(true);
+  const handleSignup = async (values, { setSubmitting, setErrors }) => {
+    console.log('Form submitted:', values.email);
+    
     try {
-      // TODO: Replace with actual Firebase auth
-      // await signup(values.email, values.password, {
-      //   name: values.fullName,
-      //   phone: values.phone
-      // });
-      
-      // Mock signup for now
-      console.log('Signup data:', {
-        email: values.email,
-        name: values.fullName,
+      await signup(values.email, values.password, {
+        name: values.name,
         phone: values.phone
       });
       
-      toast.success('Account created successfully!');
+      console.log('Signup successful, navigating to shop');
       navigate('/shop');
     } catch (error) {
-      toast.error('Signup failed. Please try again.');
+      console.error('Signup form error:', error);
+      setErrors({ submit: error.message });
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
   return (
-    <div className="container mt-5">
-      <div className="row justify-content-center">
-        <div className="col-md-6 col-lg-4">
-          <div className="card shadow">
-            <div className="card-body p-4">
-              <h3 className="text-center mb-4">Create Account</h3>
-              
-              <Formik
-                initialValues={{
-                  fullName: '',
-                  email: '',
-                  phone: '',
-                  password: '',
-                  confirmPassword: ''
-                }}
-                validationSchema={validationSchema}
-                onSubmit={handleSubmit}
-              >
-                <Form>
-                  <div className="mb-3">
-                    <label className="form-label">Full Name</label>
-                    <Field
-                      name="fullName"
+    <Container className="py-5">
+      <div className="d-flex justify-content-center">
+        <Card style={{ maxWidth: '400px', width: '100%' }}>
+          <Card.Body className="p-4">
+            <h2 className="text-center mb-4">Create Account</h2>
+            
+            <Formik
+              initialValues={{
+                name: '',
+                email: '',
+                phone: '',
+                password: '',
+                confirmPassword: ''
+              }}
+              validationSchema={validationSchema}
+              onSubmit={handleSignup}
+            >
+              {({ values, errors, touched, handleChange, handleSubmit, isSubmitting }) => (
+                <Form onSubmit={handleSubmit}>
+                  {errors.submit && <Alert variant="danger">{errors.submit}</Alert>}
+                  
+                  <Form.Group className="mb-3">
+                    <Form.Label>Full Name</Form.Label>
+                    <Form.Control
                       type="text"
-                      className="form-control"
-                      placeholder="Enter your full name"
+                      name="name"
+                      value={values.name}
+                      onChange={handleChange}
+                      isInvalid={touched.name && errors.name}
+                      placeholder="John Doe"
                     />
-                    <ErrorMessage name="fullName" component="div" className="text-danger small mt-1" />
-                  </div>
+                    <Form.Control.Feedback type="invalid">{errors.name}</Form.Control.Feedback>
+                  </Form.Group>
 
-                  <div className="mb-3">
-                    <label className="form-label">Email</label>
-                    <Field
-                      name="email"
+                  <Form.Group className="mb-3">
+                    <Form.Label>Email</Form.Label>
+                    <Form.Control
                       type="email"
-                      className="form-control"
-                      placeholder="Enter your email"
+                      name="email"
+                      value={values.email}
+                      onChange={handleChange}
+                      isInvalid={touched.email && errors.email}
+                      placeholder="your@email.com"
                     />
-                    <ErrorMessage name="email" component="div" className="text-danger small mt-1" />
-                  </div>
+                    <Form.Control.Feedback type="invalid">{errors.email}</Form.Control.Feedback>
+                  </Form.Group>
 
-                  <div className="mb-3">
-                    <label className="form-label">Phone</label>
-                    <Field
-                      name="phone"
+                  <Form.Group className="mb-3">
+                    <Form.Label>Phone</Form.Label>
+                    <Form.Control
                       type="tel"
-                      className="form-control"
-                      placeholder="10-digit phone number"
+                      name="phone"
+                      value={values.phone}
+                      onChange={handleChange}
+                      isInvalid={touched.phone && errors.phone}
+                      placeholder="9876543210"
                     />
-                    <ErrorMessage name="phone" component="div" className="text-danger small mt-1" />
-                  </div>
+                    <Form.Control.Feedback type="invalid">{errors.phone}</Form.Control.Feedback>
+                  </Form.Group>
 
-                  <div className="mb-3">
-                    <label className="form-label">Password</label>
-                    <Field
+                  <Form.Group className="mb-3">
+                    <Form.Label>Password</Form.Label>
+                    <Form.Control
+                      type="password"
                       name="password"
-                      type="password"
-                      className="form-control"
-                      placeholder="Enter password (min 6 characters)"
+                      value={values.password}
+                      onChange={handleChange}
+                      isInvalid={touched.password && errors.password}
+                      placeholder="Min 6 characters"
                     />
-                    <ErrorMessage name="password" component="div" className="text-danger small mt-1" />
-                  </div>
+                    <Form.Control.Feedback type="invalid">{errors.password}</Form.Control.Feedback>
+                  </Form.Group>
 
-                  <div className="mb-3">
-                    <label className="form-label">Confirm Password</label>
-                    <Field
+                  <Form.Group className="mb-3">
+                    <Form.Label>Confirm Password</Form.Label>
+                    <Form.Control
+                      type="password"
                       name="confirmPassword"
-                      type="password"
-                      className="form-control"
-                      placeholder="Confirm your password"
+                      value={values.confirmPassword}
+                      onChange={handleChange}
+                      isInvalid={touched.confirmPassword && errors.confirmPassword}
+                      placeholder="Confirm password"
                     />
-                    <ErrorMessage name="confirmPassword" component="div" className="text-danger small mt-1" />
-                  </div>
+                    <Form.Control.Feedback type="invalid">{errors.confirmPassword}</Form.Control.Feedback>
+                  </Form.Group>
 
-                  <button
-                    type="submit"
-                    className="btn btn-primary w-100 mb-3"
-                    disabled={loading}
+                  <Button 
+                    variant="primary" 
+                    type="submit" 
+                    className="w-100 mb-3"
+                    disabled={isSubmitting}
                   >
-                    {loading ? (
-                      <>
-                        <span className="spinner-border spinner-border-sm me-2"></span>
-                        Creating Account...
-                      </>
-                    ) : (
-                      'Sign Up'
-                    )}
-                  </button>
+                    {isSubmitting ? 'Creating Account...' : 'Sign Up'}
+                  </Button>
 
-                  <div className="text-center">
-                    <span className="text-muted">Already have an account? </span>
-                    <Link to="/login" className="text-decoration-none">
-                      Login
-                    </Link>
-                  </div>
+                  <p className="text-center mb-0">
+                    Already have an account? <Link to="/login">Login</Link>
+                  </p>
                 </Form>
-              </Formik>
-            </div>
-          </div>
-        </div>
+              )}
+            </Formik>
+          </Card.Body>
+        </Card>
       </div>
-    </div>
+    </Container>
   );
 };
 

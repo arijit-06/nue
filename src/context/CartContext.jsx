@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { generateOrderId, createFirebaseOrderData, saveOrderToFirestore } from '../utils/orderHelpers';
 
@@ -13,120 +13,105 @@ export const useCart = () => {
 };
 
 export const CartProvider = ({ children }) => {
-  const [cartState, setCartState] = useState({
-    items: [],
-    itemCount: 0,
-    subtotal: 0,
-    gst: 0,
-    total: 0
-  });
+  const [items, setItems] = useState([]);
+  const [itemCount, setItemCount] = useState(0);
+  const [subtotal, setSubtotal] = useState(0);
+  const [gst, setGst] = useState(0);
+  const [total, setTotal] = useState(0);
 
   // Load cart from localStorage on mount
   useEffect(() => {
-    const savedCart = localStorage.getItem('brandingCartData');
-    if (savedCart) {
-      setCartState(JSON.parse(savedCart));
+    try {
+      const savedCart = localStorage.getItem('brandingCart');
+      if (savedCart) {
+        const cartData = JSON.parse(savedCart);
+        setItems(cartData);
+        calculateTotals(cartData);
+      }
+    } catch (error) {
+      console.error('Error loading cart:', error);
     }
   }, []);
 
-  // Save cart to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem('brandingCartData', JSON.stringify(cartState));
-  }, [cartState]);
+  // Calculate totals whenever items change
+  const calculateTotals = (cartItems) => {
+    const count = cartItems.length;
+    const sub = cartItems.reduce((sum, item) => sum + item.itemTotal, 0);
+    const gstAmount = sub * 0.18;
+    const totalAmount = sub + gstAmount;
 
-  const calculateTotals = (items) => {
-    const subtotal = items.reduce((sum, item) => sum + item.itemTotal, 0);
-    const gst = Math.round(subtotal * 0.18);
-    const total = subtotal + gst;
-    const itemCount = items.length;
-    
-    return { subtotal, gst, total, itemCount };
+    setItemCount(count);
+    setSubtotal(sub);
+    setGst(gstAmount);
+    setTotal(totalAmount);
   };
 
-  const addToCart = (product, dimensions, quantity = 1, artworkFile = null) => {
-    const area = dimensions.length * dimensions.width;
-    const itemTotal = area * product.pricePerSqft * quantity;
-    const uniqueId = `${product.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
-    const newItem = {
-      id: uniqueId,
-      productId: product.id,
-      productName: product.name,
-      pricePerSqft: product.pricePerSqft,
-      dimensions,
-      area,
-      quantity,
-      itemTotal,
-      artworkFile,
-      artworkFileName: artworkFile ? artworkFile.name : null
-    };
+  // Add item to cart
+  const addToCart = (product, dimensions, quantity, artworkFile) => {
+    try {
+      const area = dimensions.length * dimensions.width;
+      const itemTotal = area * product.pricePerSqft * quantity;
 
-    setCartState(prevState => {
-      const newItems = [...prevState.items, newItem];
-      const totals = calculateTotals(newItems);
-      
-      toast.success(`${product.name} added to cart!`);
-      
-      return {
-        items: newItems,
-        ...totals
+      const newItem = {
+        id: `${product.id}-${Date.now()}`,
+        productId: product.id,
+        productName: product.name,
+        pricePerSqft: product.pricePerSqft,
+        dimensions: { length: dimensions.length, width: dimensions.width },
+        area: area,
+        quantity: quantity,
+        itemTotal: itemTotal,
+        artworkFile: artworkFile,
+        artworkFileName: artworkFile ? artworkFile.name : null
       };
-    });
-  };
 
-  const removeFromCart = (itemId) => {
-    setCartState(prevState => {
-      const newItems = prevState.items.filter(item => item.id !== itemId);
-      const totals = calculateTotals(newItems);
-      
-      toast.info('Item removed from cart');
-      
-      return {
-        items: newItems,
-        ...totals
-      };
-    });
-  };
+      const updatedItems = [...items, newItem];
+      setItems(updatedItems);
+      calculateTotals(updatedItems);
+      localStorage.setItem('brandingCart', JSON.stringify(updatedItems));
 
-  const updateQuantity = (itemId, newQuantity) => {
-    if (newQuantity <= 0) {
-      removeFromCart(itemId);
-      return;
+      toast.success('Added to cart!');
+    } catch (error) {
+      console.error('Add to cart error:', error);
+      toast.error('Failed to add to cart');
     }
-
-    setCartState(prevState => {
-      const newItems = prevState.items.map(item => {
-        if (item.id === itemId) {
-          const newItemTotal = item.area * item.pricePerSqft * newQuantity;
-          return { ...item, quantity: newQuantity, itemTotal: newItemTotal };
-        }
-        return item;
-      });
-      
-      const totals = calculateTotals(newItems);
-      
-      return {
-        items: newItems,
-        ...totals
-      };
-    });
   };
 
+  // Remove item from cart
+  const removeFromCart = (itemId) => {
+    const updatedItems = items.filter(item => item.id !== itemId);
+    setItems(updatedItems);
+    calculateTotals(updatedItems);
+    localStorage.setItem('brandingCart', JSON.stringify(updatedItems));
+    toast.success('Item removed from cart');
+  };
+
+  // Update quantity
+  const updateQuantity = (itemId, newQuantity) => {
+    if (newQuantity < 1) return;
+
+    const updatedItems = items.map(item => {
+      if (item.id === itemId) {
+        const itemTotal = item.area * item.pricePerSqft * newQuantity;
+        return { ...item, quantity: newQuantity, itemTotal };
+      }
+      return item;
+    });
+
+    setItems(updatedItems);
+    calculateTotals(updatedItems);
+    localStorage.setItem('brandingCart', JSON.stringify(updatedItems));
+  };
+
+  // Clear cart
   const clearCart = () => {
-    setCartState({
-      items: [],
-      itemCount: 0,
-      subtotal: 0,
-      gst: 0,
-      total: 0
-    });
-    
-    localStorage.removeItem('brandingCartData');
-    toast.info('Cart cleared');
+    setItems([]);
+    calculateTotals([]);
+    localStorage.removeItem('brandingCart');
+    toast.success('Cart cleared');
   };
 
-  const getCartItemCount = () => cartState.itemCount;
-
+  // Place order
   const placeOrder = async (customerDetails, paymentMethod = 'pending', currentUser) => {
     try {
       if (!currentUser) {
@@ -134,17 +119,13 @@ export const CartProvider = ({ children }) => {
       }
 
       const orderId = generateOrderId();
-      const billing = {
-        subtotal: cartState.subtotal,
-        gst: cartState.gst,
-        total: cartState.total
-      };
+      const billing = { subtotal, gst, total };
       
       const orderData = createFirebaseOrderData(
         orderId,
         currentUser.uid,
         customerDetails,
-        cartState.items,
+        items,
         billing,
         paymentMethod
       );
@@ -162,20 +143,17 @@ export const CartProvider = ({ children }) => {
   };
 
   const value = {
-    ...cartState,
+    items,
+    itemCount,
+    subtotal,
+    gst,
+    total,
     addToCart,
     removeFromCart,
     updateQuantity,
     clearCart,
-    getCartItemCount,
     placeOrder
   };
 
-  return (
-    <CartContext.Provider value={value}>
-      {children}
-    </CartContext.Provider>
-  );
+  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 };
-
-export { CartContext };

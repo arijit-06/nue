@@ -1,119 +1,123 @@
 import React, { useState } from 'react';
+import { Container, Card, Form, Button, Alert } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
-import { Formik, Form, Field, ErrorMessage } from 'formik';
+import { useAuth } from '../context/AuthContext';
+import { Formik } from 'formik';
 import * as Yup from 'yup';
-import { toast } from 'react-toastify';
 
 const Login = () => {
+  const { login, resetPassword, isAdmin } = useAuth();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
+  const [showReset, setShowReset] = useState(false);
 
   const validationSchema = Yup.object({
-    email: Yup.string().email('Invalid email format').required('Email is required'),
-    password: Yup.string().required('Password is required')
+    email: Yup.string().email('Invalid email').required('Email is required'),
+    password: Yup.string().min(6, 'Password must be at least 6 characters').required('Password is required')
   });
 
-  const handleSubmit = async (values) => {
-    setLoading(true);
+  const handleLogin = async (values, { setSubmitting, setErrors }) => {
+    console.log('Login attempt:', values.email);
+    
     try {
-      // TODO: Replace with actual Firebase auth
-      // await login(values.email, values.password);
+      await login(values.email, values.password);
       
-      // Mock authentication for now
-      if (values.email === 'admin@neu.com') {
-        navigate('/admin/dashboard');
-      } else {
-        navigate('/shop');
-      }
-      toast.success('Login successful!');
+      console.log('Login successful');
+      navigate(isAdmin ? '/admin/dashboard' : '/shop');
     } catch (error) {
-      toast.error('Login failed. Please check your credentials.');
+      console.error('Login form error:', error);
+      setErrors({ submit: error.message });
     } finally {
-      setLoading(false);
+      setSubmitting(false);
+    }
+  };
+
+  const handleResetPassword = async (email) => {
+    if (!email) {
+      alert('Please enter your email address first');
+      return;
+    }
+    
+    try {
+      await resetPassword(email);
+      setShowReset(false);
+    } catch (error) {
+      console.error('Password reset error:', error);
     }
   };
 
   return (
-    <div className="container mt-5">
-      <div className="row justify-content-center">
-        <div className="col-md-6 col-lg-4">
-          <div className="card shadow">
-            <div className="card-body p-4">
-              <h3 className="text-center mb-4">Login to Your Account</h3>
-              
-              <Formik
-                initialValues={{ email: '', password: '' }}
-                validationSchema={validationSchema}
-                onSubmit={handleSubmit}
-              >
-                <Form>
-                  <div className="mb-3">
-                    <label className="form-label">Email</label>
-                    <Field
-                      name="email"
+    <Container className="py-5">
+      <div className="d-flex justify-content-center">
+        <Card style={{ maxWidth: '400px', width: '100%' }}>
+          <Card.Body className="p-4">
+            <h2 className="text-center mb-4">Login</h2>
+            
+            <Formik
+              initialValues={{ email: '', password: '' }}
+              validationSchema={validationSchema}
+              onSubmit={handleLogin}
+            >
+              {({ values, errors, touched, handleChange, handleSubmit, isSubmitting }) => (
+                <Form onSubmit={handleSubmit}>
+                  {errors.submit && <Alert variant="danger">{errors.submit}</Alert>}
+                  
+                  <Form.Group className="mb-3">
+                    <Form.Label>Email</Form.Label>
+                    <Form.Control
                       type="email"
-                      className="form-control"
-                      placeholder="Enter your email"
+                      name="email"
+                      value={values.email}
+                      onChange={handleChange}
+                      isInvalid={touched.email && errors.email}
+                      placeholder="your@email.com"
                     />
-                    <ErrorMessage name="email" component="div" className="text-danger small mt-1" />
-                  </div>
+                    <Form.Control.Feedback type="invalid">{errors.email}</Form.Control.Feedback>
+                  </Form.Group>
 
-                  <div className="mb-3">
-                    <label className="form-label">Password</label>
-                    <Field
-                      name="password"
+                  <Form.Group className="mb-3">
+                    <Form.Label>Password</Form.Label>
+                    <Form.Control
                       type="password"
-                      className="form-control"
-                      placeholder="Enter your password"
+                      name="password"
+                      value={values.password}
+                      onChange={handleChange}
+                      isInvalid={touched.password && errors.password}
+                      placeholder="Enter password"
                     />
-                    <ErrorMessage name="password" component="div" className="text-danger small mt-1" />
-                  </div>
+                    <Form.Control.Feedback type="invalid">{errors.password}</Form.Control.Feedback>
+                  </Form.Group>
 
-                  <div className="mb-3 text-end">
-                    <Link to="/forgot-password" className="text-decoration-none small">
-                      Forgot Password?
-                    </Link>
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="btn btn-primary w-100 mb-3"
-                    disabled={loading}
+                  <Button 
+                    variant="primary" 
+                    type="submit" 
+                    className="w-100 mb-3"
+                    disabled={isSubmitting}
                   >
-                    {loading ? (
-                      <>
-                        <span className="spinner-border spinner-border-sm me-2"></span>
-                        Logging in...
-                      </>
-                    ) : (
-                      'Login'
-                    )}
-                  </button>
+                    {isSubmitting ? 'Logging in...' : 'Login'}
+                  </Button>
 
                   <div className="text-center">
-                    <span className="text-muted">Don't have an account? </span>
-                    <Link to="/signup" className="text-decoration-none">
-                      Sign up
-                    </Link>
+                    <Button 
+                      variant="link" 
+                      size="sm"
+                      onClick={() => handleResetPassword(values.email)}
+                    >
+                      Forgot Password?
+                    </Button>
                   </div>
 
-                  <hr className="my-3" />
+                  <hr />
 
-                  <button
-                    type="button"
-                    className="btn btn-outline-secondary w-100"
-                    disabled={loading}
-                  >
-                    <i className="bi bi-google me-2"></i>
-                    Sign in with Google
-                  </button>
+                  <p className="text-center mb-0">
+                    Don't have an account? <Link to="/signup">Sign Up</Link>
+                  </p>
                 </Form>
-              </Formik>
-            </div>
-          </div>
-        </div>
+              )}
+            </Formik>
+          </Card.Body>
+        </Card>
       </div>
-    </div>
+    </Container>
   );
 };
 

@@ -7,7 +7,7 @@ const Layout = () => {
   return (
     <>
       <Navbar />
-      <main>
+      <main style={{ paddingTop: '70px', minHeight: 'calc(100vh - 120px)' }}>
         <Outlet />
       </main>
       <Footer />

@@ -1,22 +1,21 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 const Footer = () => {
   return (
-    <footer className="bg-dark text-white py-4">
+    <footer className="bg-dark text-white py-3 mt-auto">
       <div className="container">
-        <div className="row align-items-center">
-          <div className="col-md-6">
-            <h5 className="mb-2">NEU</h5>
-            <p className="mb-0 text-muted">Transforming stores, building brands, creating success.</p>
+        <div className="d-flex justify-content-between align-items-center flex-wrap">
+          <div className="mb-2 mb-md-0">
+            <span className="fw-bold">NEU</span>
+            <span className="text-muted ms-2">© 2025 All rights reserved</span>
           </div>
-          <div className="col-md-6 text-md-end">
-            <div className="mb-3">
-              <a href="#" className="text-white me-3" aria-label="Facebook">📘</a>
-              <a href="#" className="text-white me-3" aria-label="Instagram">📷</a>
-              <a href="#" className="text-white me-3" aria-label="LinkedIn">💼</a>
-              <a href="#" className="text-white" aria-label="Twitter">🐦</a>
-            </div>
-            <p className="mb-0 text-muted small">© 2024 NEU. All rights reserved.</p>
+          
+          <div className="d-flex gap-3">
+            <Link to="/shipping-policy" className="text-white text-decoration-none">Shipping</Link>
+            <a href="#" className="text-white text-decoration-none">Privacy</a>
+            <a href="#" className="text-white text-decoration-none">Terms</a>
+            <a href="#" className="text-white text-decoration-none">Contact</a>
           </div>
         </div>
       </div>
